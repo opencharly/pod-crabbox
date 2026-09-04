@@ -11,8 +11,10 @@ crabbox-coordinator:
             The Crabbox Node.js/PostgreSQL coordinator (https://github.com/openclaw/crabbox,
             https://github.com/openclaw/crabbox/tree/main/worker/node) as a supervised
             service. Clones the pinned upstream tag, builds the Node runtime in-image
-            (npm ci + check:node + build:node + prune — the same recipe as the upstream
-            worker/Dockerfile.node, incl. the noVNC vendor step), and runs
+            (npm ci --include=dev + build:node + prune — the same recipe as the upstream
+            worker/Dockerfile.node incl. the noVNC vendor step; the devDeps are needed
+            AT BUILD (esbuild), so ci forces them in despite the candy's
+            NODE_ENV=production runtime env; runtime stays slim via npm prune --omit=dev), and runs
             `node dist-node/server.mjs` under supervisord at priority 20 (after the
             postgresql service's 10), listening on port 8080 with /v1/health and
             /v1/ready container probes. The runtime start wrapper assembles
@@ -50,10 +52,8 @@ crabbox-coordinator:
         plan:
             - run: clone the pinned upstream coordinator source (git from layer-gh)
               command: git clone --depth 1 --branch ${CRABBOX_COORDINATOR_TAG} https://github.com/openclaw/crabbox /opt/crabbox-coordinator
-            - run: install the worker's pinned dependencies (network; incl. the prebuild noVNC vendor)
-              command: npm ci --no-audit --no-fund --prefix /opt/crabbox-coordinator/worker
-            - run: typecheck the Node runtime
-              command: npm run check:node --prefix /opt/crabbox-coordinator/worker
+            - run: install the worker's dependencies INCLUDING dev (esbuild needs them at build; NODE_ENV=production from the candy env would otherwise drop them)
+              command: npm ci --include=dev --no-audit --no-fund --prefix /opt/crabbox-coordinator/worker
             - run: build the Node runtime (dist-node/server.mjs)
               command: npm run build:node --prefix /opt/crabbox-coordinator/worker
             - run: prune dev dependencies for the slim runtime
