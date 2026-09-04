@@ -33,7 +33,11 @@ crabbox-coordinator:
         require:
             - '@github.com/opencharly/layer-nodejs:v2026.239.1624'
             - '@github.com/opencharly/layer-supervisord:v2026.240.0121'
+<<<<<<< HEAD
             - '@github.com/opencharly/pod-postgresql:v2026.247.1304'
+=======
+            - '@github.com/opencharly/pod-postgresql:v2026.239.1627'
+>>>>>>> origin/main
             - '@github.com/opencharly/layer-gh:v2026.239.1624'
         env:
             NODE_ENV: "production"
