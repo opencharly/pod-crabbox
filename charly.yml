@@ -33,14 +33,11 @@ crabbox-coordinator:
         require:
             - '@github.com/opencharly/layer-nodejs:v2026.239.1624'
             - '@github.com/opencharly/layer-supervisord:v2026.240.0121'
-            - '@github.com/opencharly/layer-socat:v2026.240.0229'
             - '@github.com/opencharly/pod-postgresql:v2026.239.1627'
             - '@github.com/opencharly/layer-gh:v2026.239.1624'
         env:
             NODE_ENV: "production"
         port:
-            - 8080
-        port_relay:
             - 8080
         service:
             - name: crabbox-coordinator
@@ -68,7 +65,16 @@ crabbox-coordinator:
                 POSTGRES_USER=${POSTGRES_USER:-postgres}
                 POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-}
                 POSTGRES_HOST=${POSTGRES_HOST:-127.0.0.1}
-                export DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB:-crabbox}"
+                POSTGRES_DB=${POSTGRES_DB:-crabbox}
+                # Wait (bounded) for PostgreSQL to accept connections — supervisord
+                # priority is not a hard ordering guarantee, and the coordinator
+                # creates its schemas on startup (pg_isready ships with the
+                # postgresql candy).
+                for _i in $(seq 1 90); do
+                    if pg_isready -h "$POSTGRES_HOST" -p 5432 -U "$POSTGRES_USER" >/dev/null 2>&1; then break; fi
+                    sleep 1
+                done
+                export DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}"
                 export CRABBOX_PUBLIC_URL=${CRABBOX_PUBLIC_URL:-http://127.0.0.1:8080}
                 exec node /opt/crabbox-coordinator/worker/dist-node/server.mjs
             - check: the built Node coordinator runtime is present at the fixed path
