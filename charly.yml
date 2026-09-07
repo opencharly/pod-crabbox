@@ -6,7 +6,7 @@
 version: 2026.240.1943
 crabbox-coordinator:
     candy:
-        version: 2026.247.0100
+        version: 2026.250.0200
         description: |
             The Crabbox Node.js/PostgreSQL coordinator (https://github.com/openclaw/crabbox,
             https://github.com/openclaw/crabbox/tree/main/worker/node) as a supervised
@@ -24,12 +24,13 @@ crabbox-coordinator:
             GitHub OAuth — the candy ships none by default. This is the LOCAL,
             single-replica deployment (upstream flags the Node runtime as newly
             shipped; exact-tag pin + in-beds proof, no production-cloud cutover
-            claims). The observable, verifiable effect — the built runtime at a
+            claims). Coordinator v0.51.0+ must pair with the v0.51.0 CLI
+            (brokered lease cleanup records cleanupCompletedAt, upstream #1901). The observable, verifiable effect — the built runtime at a
             fixed path, the supervised service, and live /v1/health + /v1/ready
             200s backed by a real PostgreSQL — is exactly what the plan block
             asserts.
         var:
-            CRABBOX_COORDINATOR_TAG: v0.49.0
+            CRABBOX_COORDINATOR_TAG: v0.51.0
         require:
             - '@github.com/opencharly/layer-nodejs:v2026.239.1624'
             - '@github.com/opencharly/layer-supervisord:v2026.240.0121'
