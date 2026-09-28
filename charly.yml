@@ -3,10 +3,8 @@
 # One candy: `crabbox-coordinator` builds the Crabbox Node coordinator from the
 # pinned upstream tag and runs it supervised, backed by the opencharly postgresql
 # candy (PostgreSQL 13+, pg-boss). Root-entity repo (pod-openclaw shape).
-version: 2026.240.1943
 crabbox-coordinator:
     candy:
-        version: 2026.256.0641
         description: |
             The Crabbox Node.js/PostgreSQL coordinator (https://github.com/openclaw/crabbox,
             https://github.com/openclaw/crabbox/tree/main/worker/node) as a supervised
