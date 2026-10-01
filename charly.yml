@@ -30,10 +30,10 @@ crabbox-coordinator:
         var:
             CRABBOX_COORDINATOR_TAG: v0.51.0
         require:
-            - '@github.com/opencharly/layer-nodejs:v2026.239.1624'
-            - '@github.com/opencharly/layer-supervisord:v2026.240.0121'
-            - '@github.com/opencharly/pod-postgresql:v2026.247.1304'
-            - '@github.com/opencharly/layer-gh:v2026.239.1624'
+            - '@github.com/opencharly/layer-nodejs:v2026.272.0322'
+            - '@github.com/opencharly/layer-supervisord:v2026.271.1817'
+            - '@github.com/opencharly/pod-postgresql:v2026.272.0233'
+            - '@github.com/opencharly/layer-gh:v2026.272.0136'
         env:
             NODE_ENV: "production"
         port:
