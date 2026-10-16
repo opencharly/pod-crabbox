@@ -19,7 +19,7 @@ Canonical files:
 - `/charly-crabbox:crabbox-coordinator` — the owning skill: service properties,
   the deploy env table, and the local deployment recipe. Load before editing,
   building, deploying, or troubleshooting this candy.
-- `/charly-tools:crabbox` — the CLI candy (layer-crabbox) that pairs with this
+- `/charly-tools:crabbox-cli` — the CLI candy (layer-crabbox) that pairs with this
   coordinator.
 - `/charly-check:crabbox` — the `crabbox:` check verb (plugin-crabbox) used by the
   e2e bed.

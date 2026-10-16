@@ -54,7 +54,7 @@ crabbox doctor
 
 - Owning skill: `/charly-crabbox:crabbox-coordinator` — the service properties,
   the deploy env, and the local deployment recipe.
-- `/charly-tools:crabbox` — the CLI candy (layer-crabbox).
+- `/charly-tools:crabbox-cli` — the CLI candy (layer-crabbox).
 - `/charly-check:crabbox` — the `crabbox:` check verb (plugin-crabbox).
 - `/charly-infrastructure:postgresql` — the backing database candy.
 - [`opencharly/charly`](https://github.com/opencharly/charly) — the charly CLI and image builder
