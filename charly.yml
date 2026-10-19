@@ -121,6 +121,11 @@ crabbox-coordinator-skill:
             service on :8080 with /v1/health + /v1/ready, backed by the opencharly
             postgresql candy. The broker for the fully-local Crabbox control plane
             (shared-token auth; GitHub OAuth documented for production).
+        category: images
+        triggers:
+            - "the local Crabbox coordinator / the `crabbox-coordinator` service on :8080"
+            - "`/v1/health` + `/v1/ready` on a fully-local Crabbox broker"
+            - "deploying or troubleshooting the postgresql-backed Crabbox control plane"
         content: |-
             # crabbox-coordinator
 
