@@ -18,7 +18,7 @@ the opencharly `postgresql` candy.
 | Port | `8080` (HTTP API + web portal) |
 | Endpoints | `GET /v1/health`, `GET /v1/ready` |
 | Requires | `layer-nodejs`, `layer-supervisord`, `pod-postgresql`, `layer-gh` |
-| Runtime | Node.js ≥22.12, built from pinned `v0.51.0` |
+| Runtime | Node.js ≥22.12, built from pinned `v0.79.0` |
 | Build | fetch pinned tag (annotated → peeled commit) → `npm ci --include=dev` → `build:node` → `npm prune --omit=dev` |
 | Auth | deploy-time: shared-token (`CRABBOX_SHARED_TOKEN` + `_OWNER`) or GitHub OAuth — none shipped by default |
 
