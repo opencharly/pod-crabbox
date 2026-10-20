@@ -22,13 +22,15 @@ crabbox-coordinator:
             GitHub OAuth — the candy ships none by default. This is the LOCAL,
             single-replica deployment (upstream flags the Node runtime as newly
             shipped; exact-tag pin + in-beds proof, no production-cloud cutover
-            claims). Coordinator v0.51.0+ must pair with the v0.51.0 CLI
-            (brokered lease cleanup records cleanupCompletedAt, upstream #1901). The observable, verifiable effect — the built runtime at a
+            claims). Coordinator and CLI move in lockstep from one upstream
+            release: this candy pins v0.79.0, which pairs with the layer-crabbox
+            CLI 0.79.0 (v0.79.0's coordinator requires non-admin control
+            clients to reconnect once after the update, upstream #2907). The observable, verifiable effect — the built runtime at a
             fixed path, the supervised service, and live /v1/health + /v1/ready
             200s backed by a real PostgreSQL — is exactly what the plan block
             asserts.
         var:
-            CRABBOX_COORDINATOR_TAG: v0.51.0
+            CRABBOX_COORDINATOR_TAG: v0.79.0
         require:
             - '@github.com/opencharly/layer-nodejs:v2026.272.0322'
             - '@github.com/opencharly/layer-supervisord:v2026.271.1817'

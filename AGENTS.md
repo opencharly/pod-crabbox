@@ -47,8 +47,9 @@ Canonical files:
   entity in the same file is the owning skill's source — a candy change and its
   skill change land together.
 - The `CRABBOX_COORDINATOR_TAG` var pins the upstream build; a bump must keep the
-  coordinator and CLI tags paired (v0.51.0+ pairs with the v0.51.0 CLI). The tag
-  is annotated, so the plan dereferences it to its peeled commit.
+  coordinator and CLI tags paired (both ship from one upstream release — v0.79.0
+  pairs with the 0.79.0 CLI). The tag is annotated, so the plan dereferences it
+  to its peeled commit.
 - Keep the start wrapper's `DATABASE_URL` assembly and `pg_isready` wait in step
   with the postgresql candy's env contract (the wrapper is the inline `write:`
   step in the plan).
