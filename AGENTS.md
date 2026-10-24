@@ -1,4 +1,4 @@
-# AGENTS.md — pod-crabbox
+# AGENTS.md — pod-crabbox-coordinator
 
 Standalone candy repo for the `crabbox-coordinator` candy — the local Crabbox
 Node.js/PostgreSQL coordinator, supervised on `8080` with `/v1/health` +

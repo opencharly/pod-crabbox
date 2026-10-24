@@ -1,4 +1,4 @@
-# pod-crabbox — the Crabbox coordinator (Node.js/PostgreSQL runtime) as a service candy
+# pod-crabbox-coordinator — the Crabbox coordinator (Node.js/PostgreSQL runtime) as a service candy
 #
 # One candy: `crabbox-coordinator` builds the Crabbox Node coordinator from the
 # pinned upstream tag and runs it supervised, backed by the opencharly postgresql
