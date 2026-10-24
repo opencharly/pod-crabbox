@@ -1,7 +1,7 @@
-# pod-crabbox
+# pod-crabbox-coordinator
 
-The `pod-crabbox` candy of the OpenCharly candy library, as a standalone repo
-(kind-prefixed naming). It installs and supervises the
+The `crabbox-coordinator` candy of the OpenCharly candy library, in the
+standalone `pod-crabbox-coordinator` repo (kind-prefixed naming). It installs and supervises the
 [Crabbox](https://github.com/openclaw/crabbox) **coordinator** — the broker for
 the fully-local Crabbox control plane: lease state, run history, spend caps, and
 cleanup.
