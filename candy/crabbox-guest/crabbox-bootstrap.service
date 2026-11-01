@@ -1,0 +1,16 @@
+[Unit]
+Description=Crabbox lease bootstrap
+Documentation=https://github.com/opencharly/pod-crabbox
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/libexec/crabbox/bootstrap.sh
+TimeoutStartSec=0
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,116 @@
+# crabbox-guest — the `/crabbox` lease contract shared by every pod-crabbox image.
+#
+# Two init modes, ONE input path: a read-only directory at /crabbox (never /run,
+# which systemd covers with a tmpfs). Direct mode: the image entrypoint applies
+# the inputs and ends in `exec sshd -D`. Systemd mode: sshd.service +
+# crabbox-bootstrap.service apply the same inputs.
+crabbox-guest:
+    candy:
+        description: |
+            The `/crabbox` lease contract: sshd on 2222 (public-key only, user
+            `crabbox`), passwordless sudo for that user, the guest tool list, the
+            shared bootstrap that applies the read-only `/crabbox` inputs
+            (authorized_keys, lease.env, bootstrap.sh), the
+            `crabbox-bootstrap.service` oneshot used by systemd mode, and the
+            readiness hook at `/usr/local/libexec/crabbox/ready`.
+
+            Direct mode ends in `exec sshd -D`; systemd mode enables
+            `sshd.service` and `crabbox-bootstrap.service`. This candy ships the
+            unit file, never enables it: enabling is the systemd variant's
+            decision, and enabling it here would start systemd units inside an
+            image whose lease runs without systemd.
+        distro:
+            arch:
+                package:
+                    - openssh
+                    - sudo
+                    - git
+                    - rsync
+                    - curl
+                    - python
+                    - jq
+                    - tmux
+                    - util-linux
+                    - iproute2
+                    - openssl
+                    - shadow
+                    - procps-ng
+        port:
+            - 2222
+        plan:
+            - run: create the lease login user (uid 1000) with bash
+              command: |
+                set -euo pipefail
+                if ! getent passwd 1000 >/dev/null 2>&1; then
+                  getent group 1000 >/dev/null 2>&1 || groupadd -g 1000 crabbox
+                  useradd -m -u 1000 -g 1000 -s /bin/bash crabbox
+                fi
+              run_as: root
+            - run: install the shared lease bootstrap
+              copy: bootstrap.sh
+              to: /usr/local/libexec/crabbox/bootstrap.sh
+              mode: "0755"
+              run_as: root
+            - run: install the direct-mode lease entrypoint
+              copy: lease-init.sh
+              to: /usr/local/bin/crabbox-lease-init
+              mode: "0755"
+              run_as: root
+            - run: install the readiness hook the consumer polls over SSH
+              copy: ready.sh
+              to: /usr/local/libexec/crabbox/ready
+              mode: "0755"
+              run_as: root
+            - run: install the systemd oneshot that applies the same inputs
+              copy: crabbox-bootstrap.service
+              to: /etc/systemd/system/crabbox-bootstrap.service
+              mode: "0644"
+              run_as: root
+            - run: install the SSH contract drop-in (port 2222, public key only)
+              copy: sshd_config.conf
+              to: /etc/ssh/sshd_config.d/99-crabbox.conf
+              mode: "0644"
+              run_as: root
+            - run: grant the lease user passwordless sudo
+              command: |
+                set -euo pipefail
+                install -d -m 0750 /etc/sudoers.d
+                u=$(getent passwd 1000 | cut -d: -f1)
+                printf '%s ALL=(ALL) NOPASSWD:ALL\n' "$u" > /etc/sudoers.d/crabbox
+                chmod 0440 /etc/sudoers.d/crabbox
+                visudo -cf /etc/sudoers.d/crabbox >/dev/null
+              run_as: root
+            - run: generate the SSH host keys once, at build time
+              command: ssh-keygen -A
+              run_as: root
+            - check: the sshd binary, the entrypoint, the bootstrap and the readiness hook are installed executable
+              id: crabbox-guest-binaries
+              exit_status: 0
+              command: >-
+                  test -x /usr/sbin/sshd &&
+                  test -x /usr/local/bin/crabbox-lease-init &&
+                  test -x /usr/local/libexec/crabbox/bootstrap.sh &&
+                  test -x /usr/local/libexec/crabbox/ready
+            - check: the lease user is uid 1000, named crabbox, with bash
+              id: crabbox-guest-user
+              exit_status: 0
+              command: >-
+                  test "$(getent passwd 1000 | cut -d: -f1)" = crabbox &&
+                  getent passwd 1000 | cut -d: -f7 | grep -qx /bin/bash
+            - check: the SSH contract drop-in names port 2222 and disables password auth
+              id: crabbox-guest-sshd-config
+              exit_status: 0
+              command: >-
+                  grep -qx 'Port 2222' /etc/ssh/sshd_config.d/99-crabbox.conf &&
+                  grep -qx 'PasswordAuthentication no' /etc/ssh/sshd_config.d/99-crabbox.conf
+            - check: sshd parses its effective configuration
+              id: crabbox-guest-sshd-parse
+              exit_status: 0
+              command: >-
+                  /usr/sbin/sshd -t
+            - check: the systemd bootstrap oneshot is installed and names the shared bootstrap
+              id: crabbox-guest-bootstrap-unit
+              exit_status: 0
+              command: >-
+                  grep -qx 'ExecStart=/usr/local/libexec/crabbox/bootstrap.sh'
+                  /etc/systemd/system/crabbox-bootstrap.service
