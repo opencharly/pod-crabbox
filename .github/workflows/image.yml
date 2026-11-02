@@ -1,0 +1,24 @@
+# Image build/publish for this repo — the thin caller for the org's ONE reusable
+# (opencharly/.github/.github/workflows/image-build.yml, opencharly/.github#270).
+#
+# THE REF IS A BRANCH TODAY, AND THAT IS DELIBERATE: the reusable is still in review, so `@main`
+# does not carry it yet and this caller would fail to resolve. It moves to `@main` the moment #270
+# lands, which is a one-word change in this file. It is pinned to a BRANCH only to run the proof.
+#
+# `push` is true only for a `v*` tag push; a pull_request builds and publishes nothing (the tag then
+# derives to a local `ci-<sha>`), which is the build-only proof the reusable documents.
+name: image
+on:
+  push:
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  image:
+    uses: opencharly/.github/.github/workflows/image-build.yml@feat/w54-image-build-v2
+    with:
+      push: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
+    permissions:
+      contents: read
+      packages: write
