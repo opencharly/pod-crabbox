@@ -16,7 +16,7 @@ on:
 
 jobs:
   image:
-    uses: opencharly/.github/.github/workflows/image-build.yml@feat/w54-image-build-v2
+    uses: opencharly/.github/.github/workflows/image-build.yml@feat/w54-image-build-v3
     with:
       push: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
     permissions:
