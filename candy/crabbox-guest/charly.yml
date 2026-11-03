@@ -41,9 +41,23 @@ crabbox-guest:
             - run: create the lease login user (uid 1000) with bash
               command: |
                 set -euo pipefail
-                if ! getent passwd 1000 >/dev/null 2>&1; then
-                  getent group 1000 >/dev/null 2>&1 || groupadd -g 1000 crabbox
-                  useradd -m -u 1000 -g 1000 -s /bin/bash crabbox
+                # The contract is a LOGIN user NAMED crabbox at uid 1000. The distro base may
+                # already own uid 1000 under a generic name (`user`), so the guard tests the
+                # NAME and adopts the existing uid — a uid guard silently leaves the contract
+                # user uncreated (measured: uid 1000 present as `user`, `getent passwd
+                # crabbox` empty, check crabbox-guest-user exit 1).
+                if ! getent passwd crabbox >/dev/null 2>&1; then
+                  existing="$(getent passwd 1000 | cut -d: -f1 || true)"
+                  if [ -n "$existing" ]; then
+                    existing_group="$(getent group 1000 | cut -d: -f1 || true)"
+                    if [ -n "$existing_group" ] && [ "$existing_group" != crabbox ]; then
+                      groupmod -n crabbox "$existing_group"
+                    fi
+                    usermod -l crabbox -s /bin/bash "$existing"
+                  else
+                    getent group 1000 >/dev/null 2>&1 || groupadd -g 1000 crabbox
+                    useradd -m -u 1000 -g 1000 -s /bin/bash crabbox
+                  fi
                 fi
               run_as: root
             - run: install the shared lease bootstrap
