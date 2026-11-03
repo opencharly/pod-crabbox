@@ -1,8 +1,9 @@
 # Image build/publish for this repo — the thin caller for the org's ONE reusable
 # (opencharly/.github/.github/workflows/image-build.yml, opencharly/.github#270).
 #
-# THE REF IS THE REUSABLE'S MERGED `main`. opencharly/.github#270 merged as `d5fb8ac1ab20`
+# THE REF IS THE REUSABLE'S MERGED `main`. opencharly/.github#275 merged as `d5fb8ac1ab20`
 # (tag `v2026.307.0153`), so `@main` resolves it and this caller no longer needs a branch pin.
+# (#270 is closed, not merged — #275 is the successor that carried it.)
 # The ref moved from a branch to `@main` in commit `1609fbce`; this comment is kept in step with
 # that line, because a comment that contradicts the code it documents is a false claim.
 #

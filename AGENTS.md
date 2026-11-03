@@ -7,8 +7,9 @@ at a pinned tag.
 
 Canonical files:
 
-- `charly.yml` — the `pod-crabbox` image: `base: cachyos.cachyos`, `user: crabbox`,
-  the lease entrypoint, and the `crabbox-guest` candy.
+- `charly.yml` — the `pod-crabbox` image: `base: cachyos.cachyos`, `user: root`
+  (`uid: 0` — PID 1 is `sshd -D`, which must be root; the **login** user is `crabbox`,
+  uid 1000, created by the candy), the lease entrypoint, and the `crabbox-guest` candy.
 - `candy/crabbox-guest/charly.yml` — the contract candy: package list, port 2222,
   the plan steps that install the scripts/unit/config, and the deterministic
   `check:` steps.
