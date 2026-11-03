@@ -1,9 +1,10 @@
 # Image build/publish for this repo — the thin caller for the org's ONE reusable
 # (opencharly/.github/.github/workflows/image-build.yml, opencharly/.github#270).
 #
-# THE REF IS A BRANCH TODAY, AND THAT IS DELIBERATE: the reusable is still in review, so `@main`
-# does not carry it yet and this caller would fail to resolve. It moves to `@main` the moment #270
-# lands, which is a one-word change in this file. It is pinned to a BRANCH only to run the proof.
+# THE REF IS THE REUSABLE'S MERGED `main`. opencharly/.github#270 merged as `d5fb8ac1ab20`
+# (tag `v2026.307.0153`), so `@main` resolves it and this caller no longer needs a branch pin.
+# The ref moved from a branch to `@main` in commit `1609fbce`; this comment is kept in step with
+# that line, because a comment that contradicts the code it documents is a false claim.
 #
 # `push` is true only for a `v*` tag push; a pull_request builds and publishes nothing (the tag then
 # derives to a local `ci-<sha>`), which is the build-only proof the reusable documents.
