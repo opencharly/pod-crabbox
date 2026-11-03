@@ -1,0 +1,51 @@
+# pod-crabbox — the CachyOS lease base image for the Crabbox containerd provider.
+#
+# Class `pod-`: an image / deployment bundle. This repo owns the BASE image and
+# the `/crabbox` guest contract it installs. Every `pod-crabbox-<variant>` image
+# is its own repo and imports this one at a pinned tag
+# (`base: pod-crabbox.pod-crabbox`), so the tag that names the image and the tag
+# of the git release are the same build.
+repo: github.com/opencharly/pod-crabbox
+defaults:
+    platform:
+        - linux/amd64
+    tag: auto
+    registry: ghcr.io/opencharly
+    build:
+        - pac
+import:
+    # The CachyOS base image family, imported as a namespace so the image can say
+    # `base: cachyos.cachyos`. Advanced only by `charly box reconcile`.
+    - cachyos: '@github.com/opencharly/distro-cachyos:v2026.300.1129'
+discover:
+    - path: candy
+      recursive: true
+
+# The base image. The lease contract itself lives in `candy/crabbox-guest`, so a
+# variant imports one image and inherits every piece of it.
+pod-crabbox:
+    candy:
+        description: |
+            The CachyOS base image for a Crabbox `containerd` lease: the `/crabbox`
+            SSH contract (sshd on 2222, public-key only, user `crabbox` with
+            passwordless sudo), the guest tool list (git, rsync, curl, sudo,
+            python3, jq, tmux, flock, iproute2, openssl), the shared bootstrap that
+            applies the read-only `/crabbox` inputs (authorized_keys, lease.env,
+            bootstrap.sh), the `crabbox-bootstrap.service` oneshot for systemd mode,
+            and the readiness hook at `/usr/local/libexec/crabbox/ready` the
+            consumer polls over SSH after the SSH port answers.
+
+            Direct mode ends in `exec sshd -D`; systemd mode (the
+            `pod-crabbox-systemd` variant) enables `sshd.service` and
+            `crabbox-bootstrap.service` against the same inputs.
+        base: cachyos.cachyos
+        # The lease's PID 1 is `sshd -D`, which must run as root to read the
+        # host keys and set up privilege separation. The login user is `crabbox`
+        # (uid 1000, created by the candy), never root.
+        user: root
+        uid: 0
+        gid: 0
+        entrypoint:
+            - /usr/local/bin/crabbox-lease-init
+        candy:
+            - crabbox-guest
