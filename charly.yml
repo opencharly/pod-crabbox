@@ -49,3 +49,144 @@ pod-crabbox:
             - /usr/local/bin/crabbox-lease-init
         candy:
             - crabbox-guest
+
+# =============================================================================
+# check-pod-crabbox-lease — the FIRST disposable R10 bed for a pod-crabbox*
+# image. Until this bed existed the base image was verified only at the build
+# boundary (`charly check box`), so its running lease contract — the 2222 SSH
+# listener, public-key auth as `crabbox`, passwordless sudo, the shared
+# bootstrap consuming the read-only `/crabbox` inputs, and the readiness hook
+# exiting 0 — was unproven.
+#
+# The venue is a disposable pod built from the image under review. The bed is
+# disposable, so its container and its input volume are torn down with it.
+#
+# This bed deliberately does NOT claim the containerd substrate: in the pinned
+# toolchain (charly v2026.307.1232) a `pod:` deploy's `engine:` selector is not
+# honoured by the check-bed `config`/`start` path — `charly config` emits a
+# podman quadlet and drops the field, and `charly deploy add --engine` is an
+# unknown flag. The containerd LEASE leg is owned by plugin-crabbox's
+# `check-crabbox-containerd-e2e` bed, whose `containerd-preflight` names the
+# first missing dependency and skips visibly. What this bed proves is the base
+# image's OWN running contract, which is engine-independent: the image is
+# started as a container and the `/crabbox` path is driven end to end.
+#
+# Three steps, in the order that makes the bed a gate rather than a snapshot:
+#   1. ABSENCE  — reset the state, then prove the freshly generated key is
+#                 REFUSED and no authorized_keys exist. The refusal must be an
+#                 authentication refusal (a dead endpoint fails the step), so a
+#                 broken venue cannot read as "the contract is not applied yet".
+#   2. PERFORM  — write the read-only inputs and run the image's own shared
+#                 bootstrap, which installs authorized_keys, sources lease.env
+#                 and runs bootstrap.sh.
+#   3. PRESENCE — over the contract's own SSH path as `crabbox`: the key is
+#                 accepted, `sudo -n true` succeeds, and the readiness hook
+#                 exits 0. Those are terms only a deployed, usable lease can
+#                 produce.
+#
+# The plan runs at every check-live pass, including the fresh-rebuild pass, so
+# step 1 resets and step 2 re-applies: each pass measures its OWN perform.
+# =============================================================================
+check-pod-crabbox-lease:
+    pod:
+        image: pod-crabbox
+        disposable: true
+        lifecycle: test
+        description: >-
+            R10 witness for the pod-crabbox lease base image: a disposable
+            container built from the image runs its direct-mode entrypoint, and
+            the bed drives the whole `/crabbox` contract in three steps —
+            ABSENCE (no authorized_keys, the key is refused), PERFORM (the
+            image's shared bootstrap consumes authorized_keys, lease.env and
+            bootstrap.sh), and PRESENCE (public-key SSH as `crabbox` on 2222,
+            passwordless sudo, and `/usr/local/libexec/crabbox/ready` exiting
+            0). A missing entrypoint, listener, login user, sudo grant, bootstrap
+            or readiness hook fails the presence step; a venue that is not
+            answering fails the absence step instead of reading as "nothing
+            applied yet". The containerd lease leg remains plugin-crabbox's
+            `check-crabbox-containerd-e2e` bed.
+        volume:
+            - name: lease-inputs
+              type: volume
+              path: /crabbox
+        plan:
+            - check: absence — no authorized_keys are applied and the freshly generated key is refused
+              id: lease-contract-absent-before-bootstrap
+              context:
+                - runtime
+              timeout: 120s
+              command:
+                  command: |
+                      set -euo pipefail
+                      # Reset whatever an earlier pass left behind: the plan runs at
+                      # deploy-add AND at every check-live, and after `charly update`
+                      # the container is rebuilt while the named input volume survives.
+                      # The bed must measure its OWN perform, never a leftover one.
+                      rm -f /crabbox/authorized_keys /crabbox/lease.env /crabbox/bootstrap.sh
+                      rm -rf /home/crabbox/.ssh
+                      rm -f /var/lib/crabbox/bootstrapped /var/lib/crabbox/lease.env /var/lib/crabbox/bootstrap-marker
+                      rm -f /tmp/crabbox-lease-key /tmp/crabbox-lease-key.pub
+                      # One ephemeral credential for both probes, so the ONLY difference
+                      # between the absence and presence steps is the bootstrap's work.
+                      ssh-keygen -q -t ed25519 -N '' -f /tmp/crabbox-lease-key
+                      out=$(ssh -p 2222 -i /tmp/crabbox-lease-key \
+                        -o BatchMode=yes -o StrictHostKeyChecking=no \
+                        -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 \
+                        crabbox@127.0.0.1 true 2>&1 || true)
+                      case "$out" in
+                        *"Permission denied (publickey"*) ;;
+                        *)
+                          printf '%s\n' "$out" >&2
+                          echo "FAIL: expected the lease to refuse the key over SSH; a venue that does not answer cannot prove the absence" >&2
+                          exit 1
+                          ;;
+                      esac
+                      test ! -e /home/crabbox/.ssh/authorized_keys
+                      echo "ABSENT: no authorized_keys; the lease refuses the key"
+                  in_container: true
+            - check: perform — the image's shared bootstrap consumes the read-only inputs
+              id: lease-bootstrap-performs-the-inputs
+              context:
+                - runtime
+              timeout: 120s
+              command:
+                  command: |
+                      set -euo pipefail
+                      install -d -m 0755 /crabbox
+                      # The consumer writes each input TEMP + mv; the bootstrap reads each
+                      # one ONCE. Write the same way, so the bed exercises the contract's
+                      # own input path rather than an in-place rewrite it forbids.
+                      install -m 0644 /tmp/crabbox-lease-key.pub /crabbox/.authorized_keys.tmp
+                      printf 'crabbox_bed_nonce=%s\n' charly-pod-crabbox-bed > /crabbox/.lease.env.tmp
+                      printf '#!/bin/bash\nset -euo pipefail\nprintf "%%s\\n" "$crabbox_bed_nonce" > /var/lib/crabbox/bootstrap-marker\n' > /crabbox/.bootstrap.sh.tmp
+                      chmod 0755 /crabbox/.bootstrap.sh.tmp
+                      mv /crabbox/.authorized_keys.tmp /crabbox/authorized_keys
+                      mv /crabbox/.lease.env.tmp /crabbox/lease.env
+                      mv /crabbox/.bootstrap.sh.tmp /crabbox/bootstrap.sh
+                      /usr/local/libexec/crabbox/bootstrap.sh
+                      echo "PERFORMED: bootstrap applied authorized_keys, sourced lease.env and ran bootstrap.sh"
+                  in_container: true
+            - check: presence — public-key SSH as crabbox on 2222, passwordless sudo, and the readiness hook exit 0
+              id: lease-contract-present
+              context:
+                - runtime
+              timeout: 180s
+              command:
+                  command: |
+                      set -euo pipefail
+                      ss -ltn 'sport = :2222' | grep -q LISTEN
+                      test -f /var/lib/crabbox/bootstrapped
+                      test -f /var/lib/crabbox/lease.env
+                      marker=$(tr -d '\n' < /var/lib/crabbox/bootstrap-marker)
+                      test "$marker" = charly-pod-crabbox-bed
+                      out=$(ssh -p 2222 -i /tmp/crabbox-lease-key \
+                        -o BatchMode=yes -o StrictHostKeyChecking=no \
+                        -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 \
+                        crabbox@127.0.0.1 \
+                        'id -un && sudo -n true && echo SUDO_OK && /usr/local/libexec/crabbox/ready && echo READY_OK')
+                      printf '%s\n' "$out"
+                      printf '%s\n' "$out" | grep -qx crabbox
+                      printf '%s\n' "$out" | grep -qx SUDO_OK
+                      printf '%s\n' "$out" | grep -qx READY_OK
+                      echo "PRESENT: SSH as crabbox on 2222, passwordless sudo, readiness hook exit 0"
+                  in_container: true
